@@ -17,46 +17,33 @@ The preview opens with the password field focused and Mango selected. Enter any 
 
 The system already provides `mango.desktop` and `plasma.desktop` and has an exact copy of the wallpaper at `/etc/nixos/frost-wall.jpg`. The module checks both Wayland entries and their launch commands during the build. Mango is the first-boot default. After greetd accepts a session launch, the greeter stores only the session ID in `/var/lib/frost-greeter/session`. Cage uses software rendering for the login screen and allows switching to another VT.
 
-After reviewing the preview, run these commands from the repo checkout:
+After reviewing the preview, stage Frost from the repo checkout:
 
 ```sh
-sudo cp --no-clobber /etc/nixos/configuration.nix /etc/nixos/configuration.nix.pre-frost-greeter
-sudo install -d -m 0755 /etc/nixos/frost-greeter
-sudo install -m 0644 default.nix module.nix greeter.py backend.py /etc/nixos/frost-greeter/
-sudoedit /etc/nixos/configuration.nix
+./stage-this-host.sh
 ```
 
-Add this entry inside the existing `imports` list:
-
-```nix
-./frost-greeter/module.nix
-```
-
-Add these settings in the same file's top-level attribute set:
-
-```nix
-services.frostGreeter = {
-  enable = true;
-  username = "tiramisu";
-  wallpaper = /etc/nixos/frost-wall.jpg;
-};
-```
-
-Build first, then make the generation the next boot target. The live desktop continues using SDDM until reboot.
+The script shows the import it will add, prompts for sudo, backs up `/etc/nixos/configuration.nix` to `configuration.nix.pre-frost-greeter`, installs the module and the host settings under `/etc/nixos/frost-greeter`, and runs `nixos-rebuild boot`. Your current desktop continues using SDDM while it builds. When the script reports success, reboot:
 
 ```sh
-sudo nixos-rebuild build
-sudo nixos-rebuild boot
 sudo reboot
 ```
 
-After reboot, try a Mango login, log out, then try Plasma. Log out again and check that Plasma is selected. The staging build and nested preview do not exercise physical VT ownership, PAM against your real account, or launching either desktop on the RTX 3070.
+Try a Mango login, log out, then try Plasma. Log out again and check that Plasma is selected.
+
+## VM test
+
+```sh
+nix-build tests/pam-vm.nix
+```
+
+The VM boots Cage and greetd on a virtual GPU, uses a disposable PAM account, and exercises both launch commands and the saved selection. It uses small fixture sessions. The staged host build verifies the actual Mango and Plasma entries, with live desktop startup and physical VT ownership left for the first reboot test.
 
 ## Return to SDDM
 
 If the greeter fails, switch to a text console with Ctrl+Alt+F2 and sign in. If the VT is unreachable, reboot and choose the previous NixOS generation in the Miku GRUB menu. That generation uses SDDM.
 
-To restore SDDM for subsequent boots, run `sudoedit /etc/nixos/configuration.nix` and remove the Frost module import and the `services.frostGreeter` block. If you just installed Frost and made no other edits, you can restore the backup instead:
+To restore SDDM for subsequent boots, run `sudoedit /etc/nixos/configuration.nix` and remove `./frost-greeter/this-host.nix` from the imports list. If you just installed Frost and made no other edits, you can restore the backup instead:
 
 ```sh
 sudo cp /etc/nixos/configuration.nix.pre-frost-greeter /etc/nixos/configuration.nix
