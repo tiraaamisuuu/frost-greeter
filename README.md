@@ -17,6 +17,8 @@ The preview opens with the password field focused and Mango selected. Enter any 
 
 The system already provides `mango.desktop` and `plasma.desktop` and has an exact copy of the wallpaper at `/etc/nixos/frost-wall.jpg`. The module checks both Wayland entries and their launch commands during the build. Mango is the first-boot default. After greetd accepts a session launch, the greeter stores only the session ID in `/var/lib/frost-greeter/session`. Cage uses software rendering for the login screen and allows switching to another VT.
 
+Frost uses an 18 px Breeze Light cursor. The host config requests 1920×1080 at 239.998 Hz on HDMI-A-1. If that mode is unavailable, Cage keeps its default mode and the login form still opens.
+
 After reviewing the preview, stage Frost from the repo checkout:
 
 ```sh
@@ -37,7 +39,7 @@ Try a Mango login, log out, then try Plasma. Log out again and check that Plasma
 nix-build tests/pam-vm.nix
 ```
 
-The VM boots Cage and greetd on a virtual GPU, uses a disposable PAM account, and exercises both launch commands and the saved selection. It uses small fixture sessions. The staged host build verifies the actual Mango and Plasma entries, with live desktop startup and physical VT ownership left for the first reboot test.
+The VM boots Cage and greetd on a virtual GPU, checks the configured display mode, and exercises both launch commands and the saved selection using a disposable PAM account and small fixture sessions. The staged host build verifies the actual Mango and Plasma entries. The monitor mode and session startup on physical hardware can be checked after reboot.
 
 ## Return to SDDM
 

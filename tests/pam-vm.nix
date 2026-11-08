@@ -32,6 +32,10 @@ pkgs.testers.runNixOSTest {
       services.frostGreeter = {
         enable = true;
         username = "alice";
+        outputMode = {
+          output = "Virtual-1";
+          mode = "800x600";
+        };
         wallpaper = pkgs.writeText "test-wallpaper.svg" ''
           <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800">
             <rect width="1280" height="800" fill="#adc9e3"/>
@@ -39,6 +43,7 @@ pkgs.testers.runNixOSTest {
         '';
       };
       programs.mangowc.package = mango;
+      environment.systemPackages = [ pkgs.wlr-randr ];
       services.displayManager.sessionPackages = [ desktops ];
       users.users.alice = {
         isNormalUser = true;
@@ -51,6 +56,10 @@ pkgs.testers.runNixOSTest {
     start_all()
     machine.wait_for_unit("greetd.service")
     machine.wait_until_succeeds("pgrep -u greeter -f '[f]rost-greeter/greeter.py'", timeout=45)
+    machine.succeed(
+        'runuser -u greeter -- env XDG_RUNTIME_DIR="/run/user/$(id -u greeter)" '
+        'WAYLAND_DISPLAY=wayland-0 wlr-randr | grep -E "800x600 px, .*Hz \\(current\\)"'
+    )
     machine.sleep(3)
     machine.send_chars("wrong\n")
     machine.wait_until_succeeds("journalctl -b -u greetd | grep -q 'authentication failure'", timeout=45)
